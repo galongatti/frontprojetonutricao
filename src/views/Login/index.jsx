@@ -1,34 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useReducer, useEffect } from "react";
 import { TextField, Button } from "@material-ui/core";
 import "./index.css";
 import { Redirect } from "react-router-dom";
+import { initialState, reducer } from "../../store";
+import { login } from "../../store/action";
 
-const handleSubmit = (event, login, password, setLogado) => {
+const axios = require("axios").default;
+
+const HandleSubmit = async (event, login, password, setToken) => {
   event.preventDefault();
 
   const url = "https://localhost:44313/api/Usuario/Autenticar";
-  const init = {
-    method:"POST",
-    headers: {"Content-type": "application/json"},
-    credential:"include",
-    body:JSON.stringify({
-      login,password
-    })
-  }
-
-  fetch(url, init).then(response => {
-    if(response.status == 200)
-      setLogado(true)
+  const response = await axios.post(url, {
+    login,
+    password,
   });
 
+  const { token } = response.data;
+
+  if (response.status == 200) {
+    setToken(token);
+  }
 };
 
 const Login = () => {
-  let [login, setLogin] = useState("");
+  let [username, setUsername] = useState("");
   let [password, setPassword] = useState("");
-  let [logado, setLogado] = useState(false);
+  let [token, setToken] = useState("");
+  const [state, dispatch] = useReducer(reducer, initialState);
 
-  if (logado) return <Redirect to={"/dashboard"} />;
+  if (token != "") {
+    console.log("token2", token)
+    login(dispatch, token);
+    return <Redirect to={"/dashboard"} />;
+  }
 
   return (
     <div className="TelaLogin">
@@ -40,7 +45,7 @@ const Login = () => {
         <form
           className="formulario"
           autoComplete="true"
-          onSubmit={(e) => handleSubmit(e, login, password, setLogado)}
+          onSubmit={(e) => HandleSubmit(e, username, password, setToken)}
         >
           <TextField
             className="textField"
@@ -49,8 +54,8 @@ const Login = () => {
             type="text"
             variant="outlined"
             name="login"
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <TextField
             className="textField"
